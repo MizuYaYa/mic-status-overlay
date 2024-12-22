@@ -22,7 +22,8 @@
         "shadow": false,
         "resizable": false,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "skipTaskbar": true
       }
     ],
     "security": {
