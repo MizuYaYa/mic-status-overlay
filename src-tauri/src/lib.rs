@@ -1,4 +1,8 @@
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem, PredefinedMenuItem},
+    tray::TrayIconBuilder,
+    Manager,
+};
 use windows::{
     core::Result,
     Win32::{
@@ -62,6 +66,32 @@ pub fn run() {
                     | WS_EX_TOPMOST;
                 _pre_val = SetWindowLongA(hwnd, nindex, style.0 as i32);
             };
+
+            let separator = PredefinedMenuItem::separator(app)?;
+            let quit_i = MenuItem::with_id(app, "quit", "終了", true, None::<&str>)?;
+            let version = MenuItem::new(
+                app,
+                format!("v{}", app.package_info().version.to_string()),
+                false,
+                None::<&str>,
+            )?;
+
+            let menu = Menu::with_items(app, &[&version, &separator, &quit_i])?;
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        println!("quit menu item was clicked");
+                        app.exit(0);
+                    }
+                    _ => {
+                        println!("menu item {:?} not handled", event.id);
+                    }
+                })
+                .icon(app.default_window_icon().unwrap().clone())
+                .tooltip(app.package_info().name.to_string())
+                .build(app)?;
+
             Ok(())
         })
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
