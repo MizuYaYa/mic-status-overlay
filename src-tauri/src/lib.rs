@@ -3,6 +3,7 @@ use tauri::{
     tray::TrayIconBuilder,
     Manager,
 };
+use tauri_plugin_opener::OpenerExt;
 use windows::{
     core::Result,
     Win32::{
@@ -45,6 +46,7 @@ fn get_default_mic_mute_status() -> Result<bool> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .setup(move |app| {
             let window = app.get_webview_window("main").unwrap();
@@ -75,11 +77,17 @@ pub fn run() {
                 false,
                 None::<&str>,
             )?;
+            let help = MenuItem::with_id(app, "help", "ヘルプ", true, None::<&str>)?;
+            let name = MenuItem::new(app, format!("{}", app.package_info().name.to_string()), false, None::<&str>)?;
 
-            let menu = Menu::with_items(app, &[&version, &separator, &quit_i])?;
+            let menu = Menu::with_items(app, &[&name, &version, &separator, &help, &separator, &quit_i])?;
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
+                    "help" => {
+                        println!("help menu item was clicked");
+                        let _ = app.opener().open_url("https://github.com/MizuYaYa/mic-status-overlay", None::<&str>);
+                    }
                     "quit" => {
                         println!("quit menu item was clicked");
                         app.exit(0);
